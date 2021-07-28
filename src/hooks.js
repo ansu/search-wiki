@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useRef} from 'react';
 import axios from 'axios';
 
 export const useSearch = (query) => {
@@ -7,35 +7,63 @@ export const useSearch = (query) => {
         status:'idle',
         error:''
     });
+    const cancelToken = useRef( null);
 
     useEffect(() => {
-               axios.get(`https://en.wikipedia.org/w/api.php?origin=*&action=opensearch&search=${query}`)
-              .then(function(response){
-                    const parsedResponse = [];
-                    for(let i =0;i< response.data[1].length;i++){
-                        parsedResponse.push({
-                                id:response.data[3][i],
-                                label:response.data[1][i]
-                            })
-                    }
-                    setState({
-                        articles:parsedResponse,
-                        status:'SUCCESS',
-                        error:''
-                    })
+            if(query.length < 3){ return ;}
 
-                 })
-                 .catch(function(error){
+            if (cancelToken.current) {
+                cancelToken.current.cancel();
+            }
+            cancelToken.current = axios.CancelToken.source();
 
-                    console.log(error);
-                     setState({
-                            articles:[],
-                            status:'ERROR',
-                            error:error.message
-                     })
+           axios.get(`https://en.wikipedia.org/w/api.php?origin=*&action=opensearch&search=${query}`,{
+                cancelToken: cancelToken.current.token
+           })
+          .then(function(response){
+                const parsedResponse = [];
+                for(let i =0;i< response.data[1].length;i++){
+                    parsedResponse.push({
+                            id:response.data[3][i],
+                            label:response.data[1][i]
+                        })
+                }
+                setState({
+                    articles:parsedResponse,
+                    status:'SUCCESS',
+                    error:''
+                })
+
+             })
+             .catch(function(error){
+                if (axios.isCancel(error)) {
+                     return
+                 }
+                console.log(error);
+                 setState({
+                        articles:[],
+                        status:'ERROR',
+                        error:error.message
                  })
+             })
 
        },[query]);
 
        return state;
     };
+
+export const useDebounce = (value, delay = 500) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedValue(value)
+        }, delay);
+
+        return () => {
+            clearTimeout(timer)
+        }
+    }, [value, delay]);
+
+    return debouncedValue;
+    }
