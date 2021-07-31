@@ -1,39 +1,20 @@
-import React, { useState } from 'react';
-import ReactAutocomplete from 'react-autocomplete';
-import {useSearch,useDebounce} from './hooks';
-import Input  from './components/Input';
+import React from 'react';
+import Container from './components/Container';
+import Autocomplete from "./components/Autocomplete";
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import Home  from './pages/Home';
+import Search from './pages/Search';
+import NotFound from './pages/NotFound';
+const App = () => (
+    <Router>
+        <Switch>
+            <Route exact path="/" component={Home} />
+            <Route path="/search" component={Search} />
+            <Route component={NotFound} />
+        </Switch>
+    </Router>
 
-function App() {
-   const [value, setValue] = useState('');
-   const { articles  } = useSearch(useDebounce(value));
-  return (
-            <ReactAutocomplete
-                    items={articles}
-                    renderInput={Input}
-                    inputProps={{placeholder: 'Input a search Item'}}
-                    getItemValue={item => item.label}
-                    renderMenu={(children,value,style) => (
-                            <div style={{...style}} className="input-suggestions">
-                                {children}
-                                <a href={`/search?query=${value}`} className="search-link" >
-                                        See all results
-                                </a>
-                            </div>
+);
 
-                    )}
-                    renderItem={(item, highlighted) =>
-                      <div
-                        key={item.id}
-                        style={{ backgroundColor: highlighted ? '#eee' : 'transparent'}}
-                      >
-                        {item.label}
-                      </div>
-                    }
-                    value={value}
-                    onChange={e => setValue(e.target.value )}
-                    onSelect={value => setValue(value)}
-                  />
-  )
-}
 
 export default App;
